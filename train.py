@@ -24,7 +24,7 @@ from sklearn.metrics import (
 # =====================
 DATA_PATH = "data.csv"
 
-# ВАЖНО: в вашей версии датасета target = 'kredit'
+# target = 'kredit'
 TARGET = "kredit"
 
 RANDOM_STATE = 42
