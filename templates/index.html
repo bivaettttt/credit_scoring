@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Кредитный скоринг</title>
+    <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+    <main class="page">
+
+    <header class="top">
+        <div class="top__left">
+        <h1>Кредитный скоринг</h1>
+        <p>Введите параметры — система вернёт вероятность риска (класс 1) и решение.</p>
+
+        <nav class="nav">
+            <a class="nav__link nav__link--active" href="/">Скоринг</a>
+            <a class="nav__link" href="/model">О модели</a>
+        </nav>
+        </div>
+
+        {% if metrics %}
+        <div class="kpis">
+        <div class="kpi"><span>ROC-AUC</span><b>{{ "%.4f"|format(metrics["roc_auc"]) }}</b></div>
+        <div class="kpi"><span>F1</span><b>{{ "%.4f"|format(metrics["f1"]) }}</b></div>
+        <div class="kpi"><span>Recall</span><b>{{ "%.4f"|format(metrics["recall"]) }}</b></div>
+        <div class="kpi"><span>Precision</span><b>{{ "%.4f"|format(metrics["precision"]) }}</b></div>
+        </div>
+        {% endif %}
+    </header>
+
+    <section class="card">
+        <div class="card__head">
+        <h2>Ввод данных</h2>
+        <p class="muted">
+            Признаки представлены числовыми значениями (часть из них — коды категорий).
+            Для каждого поля указан допустимый диапазон из датасета. Наведите на ⓘ, чтобы увидеть пояснение.
+        </p>
+        </div>
+
+        <div class="grid">
+        {% for it in schema %}
+        <div class="field {% if it.is_top %}field--top{% endif %}">
+            <div class="field__head">
+            <label for="{{ it.name }}">{{ it.label }}</label>
+
+            <span class="info"
+                    tabindex="0"
+                    aria-label="Описание признака"
+                    data-tip="{{ it.desc|e }}">
+                ⓘ
+            </span>
+
+            {% if it.is_top %}
+                <span class="badge">TOP</span>
+            {% endif %}
+            </div>
+
+            <input
+            id="{{ it.name }}"
+            type="number"
+            step="{{ it.step }}"
+            min="{{ it.min }}"
+            max="{{ it.max }}"
+            value="{{ it.min }}"
+            placeholder="{{ it.placeholder }}"
+            />
+
+            <div class="hint">
+            <span class="pill">тип: {{ it.type }}</span>
+            <span class="pill">диапазон: {{ it.min }}–{{ it.max }}</span>
+            <span class="pill">важность: {{ it.importance }}</span>
+            </div>
+
+            {% if it.is_top %}
+            <div class="note">Один из наиболее влияющих признаков (по Random Forest).</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        </div>
+
+        <div class="row">
+        <div class="field field--threshold">
+            <label for="threshold">Порог отказа (threshold)</label>
+            <input id="threshold" type="number" step="0.01" min="0.10" max="0.90" value="0.50" />
+            <div class="muted small">Если вероятность риска ≥ порога → отказ, иначе → одобрение.</div>
+        </div>
+
+        <div class="actions">
+            <button id="btnPredict">Оценить</button>
+        </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card__head">
+        <h2>Результат</h2>
+        <p class="muted">Результат появится после нажатия «Оценить».</p>
+        </div>
+
+        <div id="result" class="result result--muted">
+        Заполните поля и нажмите «Оценить».
+        </div>
+    </section>
+
+    <footer class="footer">
+        <span>Backend: Flask</span>
+        <span>ML: scikit-learn</span>
+        <span>Model: model.joblib</span>
+    </footer>
+
+    <script src="/static/app.js"></script>
+    </main>
+</body>
+</html>

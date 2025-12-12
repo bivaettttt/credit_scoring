@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>О модели</title>
+    <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+    <main class="page">
+
+    <header class="top">
+        <div class="top__left">
+        <h1>Информация о модели</h1>
+        <p>
+            Качество модели кредитного скоринга, ключевые метрики и наиболее
+            значимые признаки, влияющие на решение.
+        </p>
+
+        <nav class="nav">
+            <a class="nav__link" href="/">Скоринг</a>
+            <a class="nav__link nav__link--active" href="/model">О модели</a>
+        </nav>
+        </div>
+
+        {% if metrics %}
+        <div class="kpis">
+        <div class="kpi">
+            <span>ROC-AUC</span>
+            <b>{{ "%.4f"|format(metrics["roc_auc"]) }}</b>
+        </div>
+        <div class="kpi">
+            <span>F1</span>
+            <b>{{ "%.4f"|format(metrics["f1"]) }}</b>
+        </div>
+        <div class="kpi">
+            <span>Recall</span>
+            <b>{{ "%.4f"|format(metrics["recall"]) }}</b>
+        </div>
+        <div class="kpi">
+            <span>Precision</span>
+            <b>{{ "%.4f"|format(metrics["precision"]) }}</b>
+        </div>
+        </div>
+        {% endif %}
+    </header>
+
+    <!-- ТОП ПРИЗНАКОВ -->
+    <section class="card">
+        <div class="card__head">
+        <h2>Наиболее значимые признаки модели</h2>
+        <p class="muted">
+            Важность признаков рассчитана на основе значения
+            <code>feature_importances_</code> модели Random Forest.
+            Чем выше значение, тем сильнее влияние признака на итоговое решение.
+        </p>
+        </div>
+
+        <div class="table">
+        <div class="table__row table__row--head">
+            <div>Признак</div>
+            <div>Важность</div>
+        </div>
+
+        {% for r in top_table %}
+        <div class="table__row">
+            <div>
+            <div class="mono">{{ r.feature }}</div>
+            <div class="muted small">
+                {% if r.feature == "laufkont" %}Статус текущего счёта{% endif %}
+                {% if r.feature == "laufzeit" %}Срок кредита (мес.){% endif %}
+                {% if r.feature == "moral" %}Кредитная история{% endif %}
+                {% if r.feature == "verw" %}Цель кредита{% endif %}
+                {% if r.feature == "hoehe" %}Сумма кредита{% endif %}
+                {% if r.feature == "sparkont" %}Сбережения{% endif %}
+                {% if r.feature == "beszeit" %}Стаж занятости{% endif %}
+                {% if r.feature == "rate" %}Доля платежа{% endif %}
+                {% if r.feature == "famges" %}Семейный статус{% endif %}
+                {% if r.feature == "buerge" %}Поручительство{% endif %}
+                {% if r.feature == "wohnzeit" %}Срок проживания{% endif %}
+                {% if r.feature == "verm" %}Имущество{% endif %}
+                {% if r.feature == "alter" %}Возраст{% endif %}
+                {% if r.feature == "weitkred" %}Другие кредиты{% endif %}
+                {% if r.feature == "wohn" %}Тип жилья{% endif %}
+                {% if r.feature == "bishkred" %}Кредиты ранее{% endif %}
+                {% if r.feature == "beruf" %}Профессия{% endif %}
+                {% if r.feature == "pers" %}Личный статус{% endif %}
+                {% if r.feature == "telef" %}Телефон{% endif %}
+                {% if r.feature == "gastarb" %}Иностранный работник{% endif %}
+            </div>
+            </div>
+            <div>{{ r.importance }}</div>
+        </div>
+        {% endfor %}
+        </div>
+    </section>
+
+    <!-- ГРАФИКИ -->
+    <section class="card">
+        <div class="card__head">
+        <h2>Графики качества модели</h2>
+        <p class="muted">
+            Ниже представлены ROC-кривые и матрицы ошибок для моделей
+            Decision Tree и Random Forest, полученные на тестовой выборке.
+        </p>
+        </div>
+
+        <div class="charts">
+        <div class="chart">
+            <h3>ROC-кривая — Decision Tree</h3>
+            <img src="/assets/{{ images.roc_dt }}" alt="ROC DecisionTree">
+        </div>
+
+        <div class="chart">
+            <h3>ROC-кривая — Random Forest</h3>
+            <img src="/assets/{{ images.roc_rf }}" alt="ROC RandomForest">
+        </div>
+
+        <div class="chart">
+            <h3>Матрица ошибок — Decision Tree</h3>
+            <img src="/assets/{{ images.cm_dt }}" alt="CM DecisionTree">
+        </div>
+
+        <div class="chart">
+            <h3>Матрица ошибок — Random Forest</h3>
+            <img src="/assets/{{ images.cm_rf }}" alt="CM RandomForest">
+        </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <span>Алгоритм: Random Forest</span>
+        <span>Задача: бинарная классификация</span>
+        <span>Датасет: German Credit Data</span>
+    </footer>
+
+    </main>
+</body>
+</html>
