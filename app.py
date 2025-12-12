@@ -150,11 +150,6 @@ def model_page():
         images=images
     )
 
-# --- отдача картинок из корня проекта ---
-# (чтобы не переносить png в static/)
-@app.get("/assets/<path:filename>")
-def assets(filename):
-    return send_from_directory(os.getcwd(), filename)
 
 # --- API прогнозирования ---
 @app.post("/predict")
