@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, render_template, send_from_directory
 import pandas as pd
 import joblib
+import math
 import os
 
 app = Flask(__name__)
@@ -66,6 +67,9 @@ FEATURE_META = {
 bundle = joblib.load(MODEL_PATH)
 pipeline = bundle["pipeline"]
 feature_names = bundle["feature_names"]
+# UCI South German Credit defines the source label 0 as bad.
+bad_label = bundle["target_mapping"][0]
+bad_index = list(pipeline.classes_).index(bad_label)
 metrics = bundle.get("best_metrics", {})
 
 # --- важности признаков (RandomForest/Tree) ---
@@ -154,19 +158,34 @@ def model_page():
 # --- API прогнозирования ---
 @app.post("/predict")
 def predict():
-    payload = request.get_json(force=True)
-    threshold = float(payload.get("threshold", 0.5))
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"error": "Expected a JSON object"}), 400
+    try:
+        threshold = float(payload.get("threshold", 0.5))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid threshold"}), 400
+    if not 0 <= threshold <= 1:
+        return jsonify({"error": "Threshold must be between 0 and 1"}), 400
 
     row = {}
-    for it in schema:
-        f = it["name"]
-        if f not in payload:
-            return jsonify({"error": f"Missing feature: {f}"}), 400
-        row[f] = payload[f]
+    for feature in schema:
+        name = feature["name"]
+        if name not in payload:
+            return jsonify({"error": f"Missing feature: {name}"}), 400
+        value = payload[name]
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return jsonify({"error": f"Invalid numeric feature: {name}"}), 400
+        try:
+            number = float(value)
+        except OverflowError:
+            return jsonify({"error": f"Invalid numeric feature: {name}"}), 400
+        if not math.isfinite(number) or not feature["min"] <= number <= feature["max"]:
+            return jsonify({"error": f"Feature outside data range: {name}"}), 400
+        row[name] = number
 
-    X = pd.DataFrame([row], columns=[it["name"] for it in schema])
-
-    proba_bad = float(pipeline.predict_proba(X)[:, 1][0])
+    X = pd.DataFrame([row], columns=feature_names)
+    proba_bad = float(pipeline.predict_proba(X)[0, bad_index])
     decision = "REJECT" if proba_bad >= threshold else "APPROVE"
 
     return jsonify({
@@ -176,4 +195,4 @@ def predict():
     })
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
